@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.*
+
+# Logs and debug
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Sensitive and generated files
+uploads/*.json
+uploads/gerearatedaudios/
+uploads/resumes/
+uploads/*.mp3
+factures/
+*.mp3
+
+# Credential files
+*firebase-adminsdk*.json
+*eternal-insight*.json
+*.pem
+*.key
+
+# Build and coverage
+coverage/
+dist/
+build/
+.next/
+.nuxt/
+.cache/
