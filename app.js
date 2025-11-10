@@ -54,28 +54,21 @@ const driverrouter = require('./routes/mobile/driver');
 const riderouter = require('./routes/mobile/ride');
 const mnotificationrouter = require('./routes/mobile/notification');
 const savedLocationsRouter = require('./routes/mobile/savedLocations');
+
 // Create an Express app
 const app = express();
 const port = 3100;
 
 // CORS configuration - must be defined before using
-const allowedOrigins = [
-  'https://ubcgtubcgt.netlify.app',
-  'http://localhost:4200',
-  'http://192.168.1.30:19006',
-  'http://localhost:8081',
-  'https://loxuryabackend.onrender.com',
-  'https://loxuryabackendv0-1.onrender.com'
-];
-
 const corsOptions = {
-  origin: '*', // Allow all origins (NOT recommended for production)
+  origin: '*', // Allow all origins for development
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   exposedHeaders: ['Set-Cookie'],
   optionsSuccessStatus: 200
 };
+
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
@@ -89,7 +82,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Rate limiting middleware
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max:10, // Limit each IP to 5 requests per windowMs
+  max: 10, // Limit each IP to 10 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -149,7 +142,7 @@ app.use('/resto', verifyToken, restaurantrouter);
 app.use('/paymentrestaurants', verifyToken, paymentresaurantsrouter);
 app.use('/ride', verifyToken, riderouter);
 app.use('/driver', verifyToken, driverrouter);
-app.use('/mnotification',verifyToken, mnotificationrouter);
+app.use('/mnotification', verifyToken, mnotificationrouter);
 app.use('/api/openai', openaiRoutes);
 app.use('/saved-locations', verifyToken, savedLocationsRouter);
 
@@ -159,20 +152,22 @@ app.use('/uploads', express.static('uploads'));
 // Create HTTP server
 const server = http.createServer(app);
 
-// Initialize Socket.IO instances
+// Initialize Socket.IO instances with updated CORS
 const driverIo = new Server(server, {
   path: '/driver-socket',
   cors: {
-    origin: allowedOrigins,
+    origin: '*', // Allow all origins for Socket.IO too
     credentials: true,
+    methods: ['GET', 'POST']
   },
 });
 
 const notificationIo = new Server(server, {
   path: '/notification-socket',
   cors: {
-    origin: allowedOrigins,
+    origin: '*', // Allow all origins for Socket.IO too
     credentials: true,
+    methods: ['GET', 'POST']
   },
 });
 
