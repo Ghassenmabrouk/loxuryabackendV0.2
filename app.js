@@ -18,7 +18,7 @@ connectDatabase();
 const Driver = require('./models/driver');
 const Form = require('./models/form');
 
-// Routes
+// Routes (your route imports remain the same)
 const userrouter = require('./routes/auth/user');
 const editrouter = require('./routes/auth/edit');
 const loginrouter = require('./routes/auth/login');
@@ -59,9 +59,28 @@ const savedLocationsRouter = require('./routes/mobile/savedLocations');
 const app = express();
 const port = 3100;
 
-// CORS configuration - must be defined before using
+// CORS configuration - Development friendly
 const corsOptions = {
-  origin: '*', // Allow all origins for development
+  origin: function (origin, callback) {
+    // Allow all origins in development
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // Production allowed origins
+    const allowedOrigins = [
+      'https://ubcgtubcgt.netlify.app',
+      'https://loxuryabackend.onrender.com',
+      'https://loxuryabackendv0-1.onrender.com',
+      'https://loxuryabackendv0-2-1.onrender.com'
+    ];
+    
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -72,7 +91,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
-// Middleware
+// Middleware (rest of your middleware remains the same)
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -82,7 +101,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Rate limiting middleware
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per windowMs
+  max: 10,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -96,20 +115,20 @@ app.use('/register', limiter);
 const verifyToken = (req, res, next) => {
   const token = req.cookies.token;
   if (!token) {
-    return res.sendStatus(401); // Unauthorized
+    return res.sendStatus(401);
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.sendStatus(403); // Forbidden
+      return res.sendStatus(403);
     }
 
-    req.user = decoded; // Add the decoded JWT to req.user
+    req.user = decoded;
     next();
   });
 };
 
-// Routes
+// Routes (all your route usage remains the same)
 app.use('/updateduser', verifyToken, updateduserrouter);
 app.use('/edit', verifyToken, editrouter);
 app.use('/logout', verifyToken, logoutrouter);
@@ -156,7 +175,9 @@ const server = http.createServer(app);
 const driverIo = new Server(server, {
   path: '/driver-socket',
   cors: {
-    origin: '*', // Allow all origins for Socket.IO too
+    origin: function (origin, callback) {
+      callback(null, true); // Allow all origins for Socket.IO in development
+    },
     credentials: true,
     methods: ['GET', 'POST']
   },
@@ -165,13 +186,15 @@ const driverIo = new Server(server, {
 const notificationIo = new Server(server, {
   path: '/notification-socket',
   cors: {
-    origin: '*', // Allow all origins for Socket.IO too
+    origin: function (origin, callback) {
+      callback(null, true); // Allow all origins for Socket.IO in development
+    },
     credentials: true,
     methods: ['GET', 'POST']
   },
 });
 
-// Socket.IO logic for driver location updates
+// Socket.IO logic (remains the same)
 driverIo.on('connection', (socket) => {
   console.log('Driver connected:', socket.id);
 
@@ -213,25 +236,21 @@ driverIo.on('connection', (socket) => {
 notificationIo.on('connection', (socket) => {
   console.log('User connected for notifications:', socket.id);
 
-  // Listen for user-specific notifications
   socket.on('subscribeToNotifications', (userId) => {
     console.log(`User ${userId} subscribed to notifications`);
-    socket.join(userId); // Join a room for the user
+    socket.join(userId);
   });
 
-  // Handle ride reminders
   socket.on('sendRideReminder', ({ userId, message }) => {
     console.log(`Sending ride reminder to user ${userId}:`, message);
     notificationIo.to(userId).emit('rideReminder', { message });
   });
 
-  // Handle general alerts
   socket.on('sendAlert', ({ userId, message }) => {
     console.log(`Sending alert to user ${userId}:`, message);
     notificationIo.to(userId).emit('alert', { message });
   });
 
-  // Handle disconnection
   socket.on('disconnect', () => {
     console.log('User disconnected from notifications:', socket.id);
   });
