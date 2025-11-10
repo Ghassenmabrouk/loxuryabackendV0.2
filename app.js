@@ -18,7 +18,7 @@ connectDatabase();
 const Driver = require('./models/driver');
 const Form = require('./models/form');
 
-// Routes (your route imports remain the same)
+// Routes
 const userrouter = require('./routes/auth/user');
 const editrouter = require('./routes/auth/edit');
 const loginrouter = require('./routes/auth/login');
@@ -59,30 +59,14 @@ const savedLocationsRouter = require('./routes/mobile/savedLocations');
 const app = express();
 const port = 3100;
 
-// CORS configuration - Development friendly
+// CORS configuration - Allow ALL origins
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow all origins in development
-    if (process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
-    }
-    
-    // Production allowed origins
-    const allowedOrigins = [
-      'https://ubcgtubcgt.netlify.app',
-      'https://loxuryabackend.onrender.com',
-      'https://loxuryabackendv0-1.onrender.com',
-      'https://loxuryabackendv0-2-1.onrender.com'
-    ];
-    
-    if (allowedOrigins.includes(origin) || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    // ALWAYS allow any origin - equivalent to '*'
+    callback(null, true);
   },
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie', 'Access-Control-Allow-Credentials'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   exposedHeaders: ['Set-Cookie'],
   optionsSuccessStatus: 200
@@ -91,7 +75,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
-// Middleware (rest of your middleware remains the same)
+// Middleware
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -128,7 +112,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// Routes (all your route usage remains the same)
+// Routes
 app.use('/updateduser', verifyToken, updateduserrouter);
 app.use('/edit', verifyToken, editrouter);
 app.use('/logout', verifyToken, logoutrouter);
@@ -171,13 +155,11 @@ app.use('/uploads', express.static('uploads'));
 // Create HTTP server
 const server = http.createServer(app);
 
-// Initialize Socket.IO instances with updated CORS
+// Initialize Socket.IO instances - Allow ALL origins
 const driverIo = new Server(server, {
   path: '/driver-socket',
   cors: {
-    origin: function (origin, callback) {
-      callback(null, true); // Allow all origins for Socket.IO in development
-    },
+    origin: "*", // Allow all origins
     credentials: true,
     methods: ['GET', 'POST']
   },
@@ -186,15 +168,13 @@ const driverIo = new Server(server, {
 const notificationIo = new Server(server, {
   path: '/notification-socket',
   cors: {
-    origin: function (origin, callback) {
-      callback(null, true); // Allow all origins for Socket.IO in development
-    },
+    origin: "*", // Allow all origins
     credentials: true,
     methods: ['GET', 'POST']
   },
 });
 
-// Socket.IO logic (remains the same)
+// Socket.IO logic
 driverIo.on('connection', (socket) => {
   console.log('Driver connected:', socket.id);
 
