@@ -1,7 +1,14 @@
 const express = require('express');
 const Payment = require('../../models/payment'); // Ensure the correct path to your model
 const router = express.Router();
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Initialize Stripe with secret key
+// Initialize Stripe with secret key from env. Fail fast with a clear error if missing.
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeSecretKey) {
+  console.error('Missing required environment variable: STRIPE_SECRET_KEY. Please set STRIPE_SECRET_KEY in your deployment environment (Render / Heroku / etc.).');
+  // Exit early so the process doesn't continue in a broken state
+  process.exit(1);
+}
+const stripe = require('stripe')(stripeSecretKey); // Initialize Stripe with secret key
 const pdf = require('pdfkit'); // For generating PDF files
 const path = require('path'); // Include the missing module
 const fs = require('fs');
